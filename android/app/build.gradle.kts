@@ -6,8 +6,10 @@ plugins {
 
 android {    
     namespace = "com.example.my_apmanp"
-    compileSdk = 35
-    ndkVersion = "25.1.8937393"
+    // Use a stable SDK version. 34 is the current stable version.
+    compileSdk = 34
+    // ndkVersion is managed by Flutter, so it's safer to remove it unless you need a specific version.
+    // ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -20,8 +22,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.my_apmanp"
+        // minSdk is defined by Flutter, but 21 is a safe default.
         minSdk = 21
-        targetSdk = 33
+        // Target SDK should match compile SDK.
+        targetSdk = 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
