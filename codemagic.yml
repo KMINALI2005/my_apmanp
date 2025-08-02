@@ -1,43 +1,35 @@
-# A basic Codemagic build file for a Flutter Android app.
-# The user's provided build.gradle.kts and pubspec.yaml were used as a reference.
+# ملف إعدادات Codemagic لبناء التطبيق
+# تم تحسينه لضمان بيئة بناء مستقرة
 
 workflows:
-  my-app-android:
-    name: Android Release
-    max_build_duration: 60
-    instance_type: mac_pro_m1
-    
+  android-app-build:
+    name: Android App Build
+    max_build_duration: 120 # زيادة مدة البناء إذا لزم الأمر
     environment:
-      # Flutter version from the user's pubspec.yaml
       flutter: stable
-      xcode: 15.3
-      cocoapods: default
-      
-      # Environment variables for Android build
-      # The values below are examples, you should use your own signing keys
-      vars:
-        PACKAGE_NAME: "com.example.my_apmanp"
-        ANDROID_KEYSTORE_PATH: /tmp/keystore.jks
-        ANDROID_KEYSTORE_PASS: YOUR_KEYSTORE_PASSWORD
-        ANDROID_KEY_ALIAS: YOUR_KEY_ALIAS
-        ANDROID_KEY_PASS: YOUR_KEY_PASSWORD
-      
+      # تحديد نسخة Java بشكل صريح مهم جداً للتوافق مع أدوات أندرويد الحديثة
+      java_version: 17 
     scripts:
-      # Script to decode the base64-encoded keystore
-      - name: Decode Android Keystore
-        script: |
-          echo $CM_ANDROID_KEYSTORE | base64 --decode > $ANDROID_KEYSTORE_PATH
-          
-      # Install Flutter dependencies
-      - name: Flutter pub get
-        script: |
+      - name: Set up local.properties
+        script: | 
+          echo "flutter.sdk=$FLUTTER_ROOT" > "$FCI_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
+        script: | 
+          flutter clean
           flutter pub get
-          
-      # Build the Android App Bundle
-      - name: Flutter build release
-        script: |
-          flutter build apk --release --split-per-abi
-          
+      - name: Build APK with dynamic versioning
+        script: | 
+          # استخدام متغيرات البيئة من Codemagic لتحديد رقم الإصدار والبناء
+          # يقرأ رقم الإصدار من pubspec.yaml ويستخدم رقم البناء من Codemagic
+          flutter build apk --release --build-name=$FLUTTER_PROJECT_VERSION --build-number=$BUILD_NUMBER
     artifacts:
-      # Artifacts to be published after the build
-      - build/app/outputs/flutter-apk/*.apk
+      # المسار الصحيح للـ APK المنتج
+      - build/app/outputs/apk/release/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - your_email@example.com # استبدل هذا ببريدك الإلكتروني
+        notify:
+          success: true
+          failure: false
+
