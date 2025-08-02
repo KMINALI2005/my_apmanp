@@ -1,58 +1,29 @@
 workflows:
   android-app-build:
-    name: Android App Build
+    name: Build Android APK
     max_build_duration: 120
-    instance_type: mac_mini_m1
+    instance_type: linux-medium
+
     environment:
-      android_signing:
-        - keystore_reference
-      groups:
-        - google_play
-      vars:
-        PACKAGE_NAME: "com.example.my_apmanp"
-        GOOGLE_PLAY_TRACK: internal
+      # هنا لا تحتاج توقيع فعلي إذا سمحت بالـ debug APK
       flutter: stable
       java: 17
-      xcode: latest
-      cocoapods: default
+
     scripts:
-      - name: Set up local.properties
-        script: | 
-          echo "flutter.sdk=$FLUTTER_ROOT" > "$CM_BUILD_DIR/android/local.properties"
-          
-      - name: Clean project thoroughly
-        script: | 
-          # This command is powerful and cleans all generated files.
-          flutter clean
-          
-      - name: Get Flutter packages
-        script: | 
-          # This is a critical step after cleaning. 
-          # It fetches the correct dependencies based on the updated pubspec.yaml and creates a new pubspec.lock file.
-          flutter pub get --verbose
-          
-      - name: Verify dependencies (Optional but good)
-        script: | 
-          flutter pub deps
-          
-      - name: Flutter analyze
-        script: | 
-          flutter analyze
-        ignore_failure: true # You can set this to false if you want the build to fail on analysis errors
-        
-      - name: Build APK
-        script: | 
-          flutter build apk --release --verbose --no-tree-shake-icons
-          
+      - name: Checkout code
+        script: |
+          git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO.git .
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Run code generation (إن وُجد)
+        script: |
+          flutter pub run build_runner build --delete-conflicting-outputs || echo "no code-gen"
+      - name: Build debug APK
+        script: |
+          flutter build apk --debug --no-tree-shake-icons --verbose
+
     artifacts:
-      - build/app/outputs/apk/release/*.apk
-      - build/app/outputs/bundle/release/mapping.txt # Correct path for mapping file
-      - flutter_drive.log
-      
-    publishing:
-      email:
-        recipients:
-          - your_email@example.com
-        notify:
-          success: true
-          failure: false
+      - build/app/outputs/flutter-apk/app-debug.apk
+
+    # لا ننشر على متجر Play، فقط نزّل الـAPK من artifacts
