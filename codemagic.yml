@@ -1,29 +1,41 @@
 workflows:
-  android-app-build:
-    name: Build Android APK
+  debt-manager-workflow:
+    name: Debt Manager App
+    instance_type: mac_mini_m1
     max_build_duration: 120
-    instance_type: linux-medium
-
     environment:
-      # هنا لا تحتاج توقيع فعلي إذا سمحت بالـ debug APK
+      android_signing:
+        - keystore_reference
+      groups:
+        - google_play
       flutter: stable
-      java: 17
-
+      xcode: latest
+      cocoapods: default
     scripts:
-      - name: Checkout code
+      - name: Set up local.properties
         script: |
-          git clone https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO.git .
-      - name: Install dependencies
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
         script: |
-          flutter pub get
-      - name: Run code generation (إن وُجد)
+          flutter packages pub get
+      - name: Flutter analyze
         script: |
-          flutter pub run build_runner build --delete-conflicting-outputs || echo "no code-gen"
-      - name: Build debug APK
+          flutter analyze
+      - name: Flutter unit tests
         script: |
-          flutter build apk --debug --no-tree-shake-icons --verbose
-
+          flutter test
+        ignore_failure: true
+      - name: Build APK with Flutter
+        script: |
+          flutter build apk --release
     artifacts:
-      - build/app/outputs/flutter-apk/app-debug.apk
-
-    # لا ننشر على متجر Play، فقط نزّل الـAPK من artifacts
+      - build/**/outputs/**/*.apk
+      - build/**/outputs/**/mapping.txt
+      - flutter_drive.log
+    publishing:
+      email:
+        recipients:
+          - user@example.com
+        notify:
+          success: true
+          failure: false
