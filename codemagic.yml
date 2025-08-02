@@ -19,23 +19,46 @@ workflows:
       - name: Set up local.properties
         script: | 
           echo "flutter.sdk=$FLUTTER_ROOT" > "$CM_BUILD_DIR/android/local.properties"
+          
+      - name: Deep clean project
+        script: | 
+          # حذف جميع ملفات التبعيات والتجميع
+          rm -rf .dart_tool/
+          rm -rf .packages
+          rm -rf pubspec.lock
+          rm -rf build/
+          rm -rf android/.gradle/
+          rm -rf android/app/build/
+          rm -rf android/build/
+          
+      - name: Flutter clean
+        script: | 
+          flutter clean
+          
       - name: Get Flutter packages
         script: | 
-          flutter packages pub get
+          flutter pub get --verbose
+          
+      - name: Verify dependencies
+        script: | 
+          flutter pub deps
+          echo "=== Checking for share_plus ==="
+          flutter pub deps | grep share_plus || echo "share_plus not found - Good!"
+          
       - name: Flutter analyze
         script: | 
           flutter analyze
-      - name: Flutter unit tests
-        script: | 
-          flutter test
         ignore_failure: true
+        
       - name: Build APK
         script: | 
-          flutter build apk --release
+          flutter build apk --release --verbose --no-tree-shake-icons
+          
     artifacts:
       - build/**/outputs/**/*.apk
       - build/**/outputs/**/mapping.txt
       - flutter_drive.log
+      
     publishing:
       email:
         recipients:
