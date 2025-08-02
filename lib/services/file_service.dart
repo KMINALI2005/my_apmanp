@@ -1,4 +1,4 @@
-// services/file_service.dart
+// services/file_service.dart - نسخة مبسطة بدون مشاركة
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -8,7 +8,6 @@ import 'package:open_filex/open_filex.dart';
 import 'package:excel/excel.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../models/debt_model.dart';
 
@@ -21,14 +20,13 @@ class FileService {
         return true;
       }
     }
-    return true; // For iOS or if permission not needed
+    return true;
   }
 
   // Generate and save a PDF file
   static Future<void> generatePdf(List<Debt> debts) async {
     try {
       final pdf = pw.Document();
-
       final currencyFormat = NumberFormat.currency(
         locale: 'ar_SA',
         symbol: 'د.ع.',
@@ -46,10 +44,7 @@ class FileService {
                 pw.Center(
                   child: pw.Text(
                     'تقرير الديون',
-                    style: pw.TextStyle(
-                      fontSize: 24,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
+                    style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
                   ),
                 ),
                 pw.SizedBox(height: 20),
@@ -63,15 +58,6 @@ class FileService {
                     e.name,
                   ]).toList(),
                   border: pw.TableBorder.all(),
-                  headerStyle: pw.TextStyle(
-                    fontWeight: pw.FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                  cellStyle: const pw.TextStyle(
-                    fontSize: 10,
-                  ),
-                  cellAlignment: pw.Alignment.center,
-                  headerAlignment: pw.Alignment.center,
                 ),
               ],
             );
@@ -87,8 +73,8 @@ class FileService {
         final file = File(path);
         await file.writeAsBytes(await pdf.save());
         
-        // Share the file
-        await Share.shareXFiles([XFile(path)], text: 'تقرير الديون');
+        // فتح الملف مباشرة بدلاً من المشاركة
+        await OpenFilex.open(path);
       }
     } catch (e) {
       print('Error generating PDF: $e');
@@ -101,7 +87,6 @@ class FileService {
       final excel = Excel.createExcel();
       final sheet = excel['Debts'];
       
-      // Add headers
       sheet.appendRow([
         const TextCellValue('الاسم'),
         const TextCellValue('المبلغ'),
@@ -110,7 +95,6 @@ class FileService {
         const TextCellValue('الحالة'),
       ]);
       
-      // Add data rows
       for (var debt in debts) {
         sheet.appendRow([
           TextCellValue(debt.name),
@@ -131,8 +115,8 @@ class FileService {
           final file = File(path);
           await file.writeAsBytes(fileBytes);
           
-          // Share the file
-          await Share.shareXFiles([XFile(path)], text: 'تقرير الديون');
+          // فتح الملف مباشرة
+          await OpenFilex.open(path);
         }
       }
     } catch (e) {
