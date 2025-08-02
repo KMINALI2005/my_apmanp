@@ -6,7 +6,7 @@ plugins {
 
 android {    
     namespace = "com.example.my_apmanp"
-    compileSdk = 34
+    compileSdk = 33
     ndkVersion = "25.1.8937393"
 
     compileOptions {
@@ -21,24 +21,15 @@ android {
     defaultConfig {
         applicationId = "com.example.my_apmanp"
         minSdk = 21
-        targetSdk = 34
+        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        
-        multiDexEnabled = true
     }
 
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("debug")
-            minifyEnabled = false
-            shrinkResources = false
         }
-    }
-    
-    packagingOptions {
-        pickFirst("**/libc++_shared.so")
-        pickFirst("**/libjsc.so")
     }
 }
 
