@@ -15,32 +15,32 @@ import '../models/debt_model.dart';
 class FileService {
   // Method to check and request storage permission
   static Future<bool> _requestPermission() async {
-    if (await Permission.storage.request().isGranted) {
-      return true;
+    if (Platform.isAndroid) {
+      if (await Permission.storage.request().isGranted ||
+          await Permission.manageExternalStorage.request().isGranted) {
+        return true;
+      }
     }
-    return false;
+    return true; // For iOS or if permission not needed
   }
 
   // Generate and save a PDF file
   static Future<void> generatePdf(List<Debt> debts) async {
-    final pdf = pw.Document();
+    try {
+      final pdf = pw.Document();
 
-    final currencyFormat = NumberFormat.currency(
-      locale: 'ar_SA',
-      symbol: 'د.ع.',
-      decimalDigits: 0,
-    );
-    
-    pdf.addPage(
-      pw.Page(
-        theme: pw.ThemeData.with's(
-          defaultTextStyle: const pw.TextStyle(font: pw.Font.pdfa('NotoNaskhArabic-Regular')),
-        ),
-        pageFormat: PdfPageFormat.a4,
-        build: (pw.Context context) {
-          return pw.Directionality(
-            textDirection: pw.TextDirection.rtl,
-            child: pw.Column(
+      final currencyFormat = NumberFormat.currency(
+        locale: 'ar_SA',
+        symbol: 'د.ع.',
+        decimalDigits: 0,
+      );
+      
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          textDirection: pw.TextDirection.rtl,
+          build: (pw.Context context) {
+            return pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Center(
@@ -74,66 +74,68 @@ class FileService {
                   headerAlignment: pw.Alignment.center,
                 ),
               ],
-            ),
-          );
-        },
-      ),
-    );
+            );
+          },
+        ),
+      );
 
-    try {
       final status = await _requestPermission();
       if (status) {
-        final dir = await getExternalStorageDirectory();
-        final path = '${dir?.path}/debts_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final dir = await getApplicationDocumentsDirectory();
+        final fileName = 'debts_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final path = '${dir.path}/$fileName';
         final file = File(path);
         await file.writeAsBytes(await pdf.save());
-        await OpenFilex.open(path);
+        
+        // Share the file
+        await Share.shareXFiles([XFile(path)], text: 'تقرير الديون');
       }
     } catch (e) {
-      // Handle error
       print('Error generating PDF: $e');
     }
   }
 
-  // Generate and save an Excel (CSV) file
+  // Generate and save an Excel file
   static Future<void> generateExcel(List<Debt> debts) async {
-    final excel = Excel.createExcel();
-    final sheet = excel['Debts'];
-    
-    // Add headers
-    sheet.appendRow([
-      const TextCellValue('الاسم'),
-      const TextCellValue('المبلغ'),
-      const TextCellValue('الفئة'),
-      const TextCellValue('التاريخ'),
-      const TextCellValue('الحالة'),
-    ]);
-    
-    // Add data rows
-    for (var debt in debts) {
-      sheet.appendRow([
-        TextCellValue(debt.name),
-        DoubleCellValue(debt.amount),
-        TextCellValue(debt.category),
-        TextCellValue(DateFormat('yyyy-MM-dd').format(debt.date)),
-        TextCellValue(debt.isPaid ? 'مدفوع' : 'متبقي'),
-      ]);
-    }
-
     try {
+      final excel = Excel.createExcel();
+      final sheet = excel['Debts'];
+      
+      // Add headers
+      sheet.appendRow([
+        const TextCellValue('الاسم'),
+        const TextCellValue('المبلغ'),
+        const TextCellValue('الفئة'),
+        const TextCellValue('التاريخ'),
+        const TextCellValue('الحالة'),
+      ]);
+      
+      // Add data rows
+      for (var debt in debts) {
+        sheet.appendRow([
+          TextCellValue(debt.name),
+          DoubleCellValue(debt.amount),
+          TextCellValue(debt.category),
+          TextCellValue(DateFormat('yyyy-MM-dd').format(debt.date)),
+          TextCellValue(debt.isPaid ? 'مدفوع' : 'متبقي'),
+        ]);
+      }
+
       final status = await _requestPermission();
       if (status) {
-        final dir = await getExternalStorageDirectory();
-        final path = '${dir?.path}/debts_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final dir = await getApplicationDocumentsDirectory();
+        final fileName = 'debts_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final path = '${dir.path}/$fileName';
         final fileBytes = excel.save();
         if (fileBytes != null) {
           final file = File(path);
           await file.writeAsBytes(fileBytes);
-          await OpenFilex.open(path);
+          
+          // Share the file
+          await Share.shareXFiles([XFile(path)], text: 'تقرير الديون');
         }
       }
     } catch (e) {
-      // Handle error
       print('Error generating Excel: $e');
     }
   }
