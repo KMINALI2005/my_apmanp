@@ -1,4 +1,4 @@
-// services/file_service.dart - نسخة مبسطة بدون مشاركة
+// services/file_service.dart - إصدار مبسط بدون مشاركة
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,16 +15,41 @@ class FileService {
   // Method to check and request storage permission
   static Future<bool> _requestPermission() async {
     if (Platform.isAndroid) {
-      if (await Permission.storage.request().isGranted ||
-          await Permission.manageExternalStorage.request().isGranted) {
-        return true;
+      var status = await Permission.storage.status;
+      if (!status.isGranted) {
+        status = await Permission.storage.request();
       }
+      return status.isGranted;
     }
     return true;
   }
 
+  // Show success message
+  static void _showSuccess(BuildContext? context, String message) {
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // Show error message
+  static void _showError(BuildContext? context, String message) {
+    if (context != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   // Generate and save a PDF file
-  static Future<void> generatePdf(List<Debt> debts) async {
+  static Future<void> generatePdf(List<Debt> debts, [BuildContext? context]) async {
     try {
       final pdf = pw.Document();
       final currencyFormat = NumberFormat.currency(
@@ -44,10 +69,18 @@ class FileService {
                 pw.Center(
                   child: pw.Text(
                     'تقرير الديون',
-                    style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ),
                 pw.SizedBox(height: 20),
+                pw.Text(
+                  'تاريخ التقرير: ${DateFormat('yyyy-MM-dd HH:mm').format(DateTime.now())}',
+                  style: const pw.TextStyle(fontSize: 12),
+                ),
+                pw.SizedBox(height: 10),
                 pw.Table.fromTextArray(
                   headers: ['الحالة', 'التاريخ', 'الفئة', 'المبلغ', 'الاسم'],
                   data: debts.map((e) => [
@@ -58,6 +91,13 @@ class FileService {
                     e.name,
                   ]).toList(),
                   border: pw.TableBorder.all(),
+                  headerStyle: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                  cellStyle: const pw.TextStyle(fontSize: 10),
+                  cellAlignment: pw.Alignment.center,
+                  headerAlignment: pw.Alignment.center,
                 ),
               ],
             );
@@ -65,62 +105,82 @@ class FileService {
         ),
       );
 
-      final status = await _requestPermission();
-      if (status) {
+      final hasPermission = await _requestPermission();
+      if (hasPermission) {
         final dir = await getApplicationDocumentsDirectory();
-        final fileName = 'debts_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        final fileName = 'تقرير_الديون_${DateTime.now().millisecondsSinceEpoch}.pdf';
         final path = '${dir.path}/$fileName';
         final file = File(path);
         await file.writeAsBytes(await pdf.save());
         
-        // فتح الملف مباشرة بدلاً من المشاركة
-        await OpenFilex.open(path);
+        // Open the file
+        final result = await OpenFilex.open(path);
+        if (result.type == ResultType.done) {
+          _showSuccess(context, 'تم إنشاء ملف PDF بنجاح');
+        } else {
+          _showError(context, 'فشل في فتح الملف');
+        }
+      } else {
+        _showError(context, 'لا توجد صلاحية للوصول للملفات');
       }
     } catch (e) {
       print('Error generating PDF: $e');
+      _showError(context, 'حدث خطأ في إنشاء ملف PDF');
     }
   }
 
   // Generate and save an Excel file
-  static Future<void> generateExcel(List<Debt> debts) async {
+  static Future<void> generateExcel(List<Debt> debts, [BuildContext? context]) async {
     try {
       final excel = Excel.createExcel();
-      final sheet = excel['Debts'];
+      final sheet = excel['تقرير الديون'];
       
+      // Add headers
       sheet.appendRow([
-        const TextCellValue('الاسم'),
-        const TextCellValue('المبلغ'),
-        const TextCellValue('الفئة'),
-        const TextCellValue('التاريخ'),
-        const TextCellValue('الحالة'),
+        'الاسم',
+        'المبلغ',
+        'الفئة',
+        'التاريخ',
+        'الحالة',
+        'الوصف'
       ]);
       
+      // Add data rows
       for (var debt in debts) {
         sheet.appendRow([
-          TextCellValue(debt.name),
-          DoubleCellValue(debt.amount),
-          TextCellValue(debt.category),
-          TextCellValue(DateFormat('yyyy-MM-dd').format(debt.date)),
-          TextCellValue(debt.isPaid ? 'مدفوع' : 'متبقي'),
+          debt.name,
+          debt.amount,
+          debt.category,
+          DateFormat('yyyy-MM-dd').format(debt.date),
+          debt.isPaid ? 'مدفوع' : 'متبقي',
+          debt.description.isNotEmpty ? debt.description : 'لا يوجد'
         ]);
       }
 
-      final status = await _requestPermission();
-      if (status) {
+      final hasPermission = await _requestPermission();
+      if (hasPermission) {
         final dir = await getApplicationDocumentsDirectory();
-        final fileName = 'debts_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+        final fileName = 'تقرير_الديون_${DateTime.now().millisecondsSinceEpoch}.xlsx';
         final path = '${dir.path}/$fileName';
-        final fileBytes = excel.save();
+        final fileBytes = excel.encode();
         if (fileBytes != null) {
           final file = File(path);
           await file.writeAsBytes(fileBytes);
           
-          // فتح الملف مباشرة
-          await OpenFilex.open(path);
+          // Open the file
+          final result = await OpenFilex.open(path);
+          if (result.type == ResultType.done) {
+            _showSuccess(context, 'تم إنشاء ملف Excel بنجاح');
+          } else {
+            _showError(context, 'فشل في فتح الملف');
+          }
         }
+      } else {
+        _showError(context, 'لا توجد صلاحية للوصول للملفات');
       }
     } catch (e) {
       print('Error generating Excel: $e');
+      _showError(context, 'حدث خطأ في إنشاء ملف Excel');
     }
   }
 }
