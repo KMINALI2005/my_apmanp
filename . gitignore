@@ -1,0 +1,13 @@
+# Android local properties
+android/local.properties
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.gradle/
+.classpath
+.project
+.settings/
+
+# Build outputs
+build/
