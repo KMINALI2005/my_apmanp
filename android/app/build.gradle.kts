@@ -6,7 +6,7 @@ plugins {
 
 android {    
     namespace = "com.example.my_apmanp"
-    compileSdk = 33
+    compileSdk = 35
     ndkVersion = "25.1.8937393"
 
     compileOptions {
