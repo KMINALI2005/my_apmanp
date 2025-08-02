@@ -1,38 +1,52 @@
 name: my_apmanp
-description: "A new Flutter project."
-publish_to: 'none'
+description: "تطبيق لإدارة الديون الشخصية يعمل بدون انترنت."
+publish_to: 'none' 
 
+# تم تحديث الإصدارات لضمان التوافق وحل أخطاء البناء
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.8.0 <4.0.0'
+  sdk: '>=3.2.3 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
-
-  cupertino_icons: ^1.0.8
   
-  # Dependencies for local database, state management, and file operations
-  sqflite: ^2.3.3+1
-  path_provider: ^2.1.3
-  provider: ^6.1.2
-  intl: ^0.20.0
-  flutter_slidable: ^3.1.0
-  share_plus: ^9.0.0
-  pdf: ^3.11.0
-  open_filex: ^4.3.2
-  excel: ^2.1.0
-  permission_handler: ^11.3.1
   flutter_localizations:
     sdk: flutter
-  
+
+  cupertino_icons: ^1.0.6
+
+  # --- تم تحديث المكتبات إلى أحدث الإصدارات المستقرة ---
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+  provider: ^6.1.2
+  intl: ^0.20.0
+  pdf: ^3.10.8
+  excel: ^4.0.3
+  open_file_plus: ^3.4.1
+  permission_handler: ^11.3.1
+  # تحديث share_plus هو الحل الرئيسي للمشكلة
+  share_plus: ^9.0.0 
+  uuid: ^4.4.0 # إضافة مكتبة uuid التي تم استخدامها في الكود
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.8
+  flutter_lints: ^3.0.0 # تحديث نسخة lints
 
 flutter:
   uses-material-design: true
 
-  generate: true
+  assets:
+    - assets/fonts/ # تأكد من وجود هذا السطر إذا أضفت الخطوط
+
+  fonts:
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
